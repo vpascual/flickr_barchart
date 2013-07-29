@@ -9,8 +9,17 @@
 
     <script>
 	
+	/*
+		0 - Hours
+		1 - Days
+		2 - Weeks
+		3 - Months
+	*/
+	var granularity = 1; 
 	var photos = [];
-	var urls = []
+	var currentPhoto = 0; // stores the number of photos that have been processed
+	var histogram = []; // each position of this array will contain a sorted array of the pictures that belong to each bin
+	
 	searchPhotos(1, onPageLoaded);	
 
 	function onPageLoaded(data) {
@@ -21,10 +30,10 @@
 
 	    console.log("Length: " + photos.length)
 
-	    if (data.photos.page < data.photos.pages)
+	    if (data.photos.page < 2/*data.photos.pages*/)
 	    	searchPhotos(data.photos.page + 1, onPageLoaded)
 	    else
-	    	onPhotosLoaded() 
+	    	getPhotosMetadata() 
 	}
 
 	function searchPhotos(numPage, callback) {
@@ -44,40 +53,98 @@
 			    callback);
 	}
 
- 	function onPhotosLoaded() {
- 		getPhotosUrls()
- 	}
+ 	function getPhotosMetadata() {
+ 		if (currentPhoto < photos.length) {
+ 			photo = photos[currentPhoto];
+ 			photo.url = "http://farm" + photo.farm + ".staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret + "_b.jpg";
 
- 	function getPhotosUrls() {
- 		for (var i = 0; i<photos.length; i++) {
- 			photo = photos[i];
-
- 			urls.push("http://farm" + photo.farm + ".staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret + "_b.jpg")
- 			console.log(urls[urls.length - 1])
- 		}
-
- 		getPhotoInfo(photos[0].id, photos[0].secret, done)
- 	}
- 	
- 	function getPhotoInfo(id, secret, callback) {
- 		$.get(
+ 			$.get(
 			    "http://api.flickr.com/services/rest/",
 			    {
 			    	//oauth_nonce : 89601180, 
 			    	method : 'flickr.photos.getInfo',
 			    	api_key : '4aa644ee462a328d852a34e4a0fe7855',
-			    	photo_id : id,
-			    	secret : secret,
+			    	photo_id : photo.id,
+			    	secret : photo.secret,
 			    	format : 'json',
 			    	nojsoncallback : 1
 			    }, 
-			    callback);
+			    function (data, textStatus, oHTTP) {
+			    	var splitDate = data.photo.dates.taken.split(' ')
+			    	day = splitDate[0].split('-')
+			    	hour = splitDate[1].split(':')
+			    	date = new Date(day[0], day[1], day[2], hour[0], hour[1], hour[2])
+			    	photo.date = date;
+			    	//console.log("Taken: " + photo.date)
+			    	currentPhoto++;
+			    	getPhotosMetadata();
+			    });
+ 		} else {
+ 			// sorting pictures acording to their date
+			photos = photos.sort(function(a,b) { 
+			   return ( a.date < b.date ? -1 : (a.date > b.date ? 1 : 0 ) );
+			});
+
+			getDataStructure();
+ 		} 		
  	}
 
- 	function done(data) {
- 		console.log(data)
+ 	function getDataStructure() {
+ 		var lastDate = -1; 		
+ 		var currentArray = [];
+ 		var lastBinIdentifier = getGranularityValue(photos[0].date);
+
+ 		for (var i = photos.length - 1; i>-1; i--) {
+ 			currentPhotoIdentifier = getGranularityValue(photos[i].date)
+ 			
+ 			if (currentPhotoIdentifier == lastBinIdentifier)
+ 				currentArray.push(photos[i]);
+ 			else {
+ 				histogram.push(currentArray);
+ 				lastBinIdentifier = currentPhotoIdentifier;
+ 				currentArray = [];
+ 			}	
+		}
  	}
 
+ 	function getGranularityValue(date) {
+ 		switch(granularity)
+			{
+				case 0: // hours
+					console.log("Current granularity value: " + date.getHours());
+					return date.getHours();
+				case 1: // days
+					console.log("Current granularity value: " + date.getDay());
+					return date.getDay();
+				case 2: // weeks
+					console.log("Current granularity value: " + getWeekNumber(date));
+					return getWeekNumber;
+				case 3: // months
+					console.log("Current granularity value: " + date.getMonth());
+					return date.getMonth();
+				default:
+					console.log("Return default granularity value: " + date.getDay());
+					return date.getDay();
+			}
+ 	}
+
+ 	/*
+ 	*	Code taken from http://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
+ 	*/
+	function getWeekNumber(d) {
+	    // Copy date so don't modify original
+	    d = new Date(d);
+	    d.setHours(0,0,0);
+	    // Set to nearest Thursday: current date + 4 - current day number
+	    // Make Sunday's day number 7
+	    d.setDate(d.getDate() + 4 - (d.getDay()||7));
+	    // Get first day of year
+	    var yearStart = new Date(d.getFullYear(),0,1);
+	    // Calculate full weeks to nearest Thursday
+	    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7)
+	    // Return array of year and week number
+	    return [d.getFullYear(), weekNo];
+	}
  	/*function getDominantColor(url) {
  		color = getDominantColor(url)
  	}*/
