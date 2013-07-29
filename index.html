@@ -19,7 +19,11 @@
 	var photos = [];
 	var currentPhoto = 0; // stores the number of photos that have been processed
 	var histogram = []; // each position of this array will contain a sorted array of the pictures that belong to each bin
-	
+	var constants = {
+		'main_url' : 'url_l',
+		'num_photos_per_page' : 20
+	}
+
 	searchPhotos(1, onPageLoaded);	
 
 	function onPageLoaded(data) {
@@ -31,9 +35,17 @@
 	    console.log("Length: " + photos.length)
 
 	    if (data.photos.page < 2/*data.photos.pages*/)
-	    	searchPhotos(data.photos.page + 1, onPageLoaded)
-	    else
-	    	getPhotosMetadata() 
+	    	searchPhotos(data.photos.page + 1, onPageLoaded);
+	    else {
+	    	//getPhotosMetadata()
+	    	for (var i = 0; i<photos.length; i++) {
+	    		photo = photos[i];
+	    		console.log(photo)
+	    		console.log("Date: " + photo.datetaken)
+	    		photo.date = flickrDateToDate(photo.datetaken);	    		
+	    	}
+	    	getDataStructure();
+	    }
 	}
 
 	function searchPhotos(numPage, callback) {
@@ -46,6 +58,9 @@
 			    	user_id : '12001399@N05',
 			    	min_taken_date : '2012-12-05',
 			    	max_taken_date : '2013-05-22',
+			    	per_page : constants.num_photos_per_page,
+			    	sort : 'date-posted-asc',
+			    	extras : 'date_taken, original_format, geo, date_taken, original_format, geo, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o',
 			    	page : numPage,
 			    	format : 'json',
 			    	nojsoncallback : 1
@@ -70,12 +85,8 @@
 			    	nojsoncallback : 1
 			    }, 
 			    function (data, textStatus, oHTTP) {
-			    	var splitDate = data.photo.dates.taken.split(' ')
-			    	day = splitDate[0].split('-')
-			    	hour = splitDate[1].split(':')
-			    	date = new Date(day[0], day[1], day[2], hour[0], hour[1], hour[2])
-			    	photo.date = date;
-			    	//console.log("Taken: " + photo.date)
+			    	
+			    	console.log("Retrieving info from photo num " + currentPhoto);			    	
 			    	currentPhoto++;
 			    	getPhotosMetadata();
 			    });
@@ -89,24 +100,43 @@
  		} 		
  	}
 
+ 	function flickrDateToDate(datetaken) {
+ 		var splitDate = datetaken.split(' ');
+    	day = splitDate[0].split('-');
+    	hour = splitDate[1].split(':');
+    	date = new Date(day[0], day[1], day[2], hour[0], hour[1], hour[2]);
+    	return date;
+ 	}
+
  	function getDataStructure() {
  		var lastDate = -1; 		
  		var currentArray = [];
  		var lastBinIdentifier = getGranularityValue(photos[0].date);
 
- 		for (var i = photos.length - 1; i>-1; i--) {
+ 		for (var i = 0; i<photos.length; i++) {
  			currentPhotoIdentifier = getGranularityValue(photos[i].date)
  			
- 			if (currentPhotoIdentifier == lastBinIdentifier)
+ 			if (currentPhotoIdentifier == lastBinIdentifier) {
+ 				console.log("Adding photo " + photos[i].id + " with date " + photos[i].date + " to bin " + currentPhotoIdentifier)
  				currentArray.push(photos[i]);
- 			else {
+ 				console.log("Current array has now " + currentArray.length + " values")
+ 			} else { 				
+ 				console.log("Found a new identifier " + currentPhotoIdentifier + " different from " + lastBinIdentifier);
  				histogram.push(currentArray);
+ 				console.log("Histgraom has now " + histogram.length + " values");
  				lastBinIdentifier = currentPhotoIdentifier;
+ 				console.log("Adding photo " + photos[i].id + " with date " + photos[i].date + " to bin " + currentPhotoIdentifier)
  				currentArray = [];
+ 				currentArray.push(photos[i]);
  			}	
 		}
+		histogram.push(currentArray);
  	}
 
+ 	/**
+ 	*	This could also be solved with the granularity param: http://www.flickr.com/services/api/misc.dates.html
+ 	* 	Nevertheless this param doesn't allow the "week" granularity so decided to do it by myself creating the  	"date!" parameter in the "photo" object
+ 	**/
  	function getGranularityValue(date) {
  		switch(granularity)
 			{
