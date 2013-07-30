@@ -8,21 +8,21 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
 
     <script>
-	
+	var constants = {
+		'main_url' : 'url_l',
+		'num_photos_per_page' : 20,
+		'default_granularity' : 1
+	}
 	/*
 		0 - Hours
 		1 - Days
 		2 - Weeks
 		3 - Months
 	*/
-	var granularity = 1; 
+	var granularity = constants.default_granularity; 
 	var photos = [];
 	var currentPhoto = 0; // stores the number of photos that have been processed
-	var histogram = []; // each position of this array will contain a sorted array of the pictures that belong to each bin
-	var constants = {
-		'main_url' : 'url_l',
-		'num_photos_per_page' : 20
-	}
+	var histogram = []; // each position of this array will contain a sorted array of the pictures that belong to each bin	
 
 	searchPhotos(1, onPageLoaded);	
 
@@ -68,38 +68,6 @@
 			    callback);
 	}
 
- 	function getPhotosMetadata() {
- 		if (currentPhoto < photos.length) {
- 			photo = photos[currentPhoto];
- 			photo.url = "http://farm" + photo.farm + ".staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret + "_b.jpg";
-
- 			$.get(
-			    "http://api.flickr.com/services/rest/",
-			    {
-			    	//oauth_nonce : 89601180, 
-			    	method : 'flickr.photos.getInfo',
-			    	api_key : '4aa644ee462a328d852a34e4a0fe7855',
-			    	photo_id : photo.id,
-			    	secret : photo.secret,
-			    	format : 'json',
-			    	nojsoncallback : 1
-			    }, 
-			    function (data, textStatus, oHTTP) {
-			    	
-			    	console.log("Retrieving info from photo num " + currentPhoto);			    	
-			    	currentPhoto++;
-			    	getPhotosMetadata();
-			    });
- 		} else {
- 			// sorting pictures acording to their date
-			photos = photos.sort(function(a,b) { 
-			   return ( a.date < b.date ? -1 : (a.date > b.date ? 1 : 0 ) );
-			});
-
-			getDataStructure();
- 		} 		
- 	}
-
  	function flickrDateToDate(datetaken) {
  		var splitDate = datetaken.split(' ');
     	day = splitDate[0].split('-');
@@ -141,20 +109,20 @@
  		switch(granularity)
 			{
 				case 0: // hours
-					console.log("Current granularity value: " + date.getHours());
-					return date.getHours();
+					console.log("Current granularity value: " + String(date.getMonth) + String(date.getDay()) + date.getHours());
+					return String(date.getMonth) + String(date.getDay()) + String(date.getHours());
 				case 1: // days
-					console.log("Current granularity value: " + date.getDay());
-					return date.getDay();
+					console.log("Current granularity value: " + String(date.getMonth()) + String(date.getDay()));
+					return String(date.getMonth()) + String(date.getDay());
 				case 2: // weeks
 					console.log("Current granularity value: " + getWeekNumber(date));
-					return getWeekNumber;
+					return getWeekNumber(date);
 				case 3: // months
-					console.log("Current granularity value: " + date.getMonth());
-					return date.getMonth();
+					console.log("Current granularity value: " + date.getYear() + date.getMonth());
+					return date.getYear() + date.getMonth();
 				default:
-					console.log("Return default granularity value: " + date.getDay());
-					return date.getDay();
+					console.log("Return default granularity value: " + String(date.getMonth()) + String(date.getDay()));
+					return String(date.getMonth()) + String(date.getDay());
 			}
  	}
 
@@ -173,7 +141,7 @@
 	    // Calculate full weeks to nearest Thursday
 	    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7)
 	    // Return array of year and week number
-	    return [d.getFullYear(), weekNo];
+	    return weekNo;
 	}
  	/*function getDominantColor(url) {
  		color = getDominantColor(url)
