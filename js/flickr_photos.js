@@ -15,12 +15,13 @@ var constants = {
 	var photos = [];
 	var currentPhoto = 0; // stores the number of photos that have been processed
 	var histogram = []; // each position of this array will contain a sorted array of the pictures that belong to each bin	
+	var callbackOnFinish;
 	
-	function init(photoInitDate, photoEndDate, binsGranularity) {
+	function init(photoInitDate, photoEndDate, callback, binsGranularity) {
 		initDate = photoInitDate;
 		endDate = photoEndDate;
-		granularity = binsGranularity;
-
+		granularity = (binsGranularity == undefined) ? constants.default_granularity : binsGranularity;
+		callbackOnFinish = callback;
 		searchPhotos(1, onPageLoaded);		
 	}	
 
@@ -151,7 +152,7 @@ var constants = {
 			The call to ColorThief.getColor generates the error "Unable to get image data from canvas because the canvas has been tainted by cross-origin data."
 			This is a problem of the Same Origin Policy and apparently should be fixed either using jsonp(¿?) or by
 			creating a proxy that retrieves the image
- 		*//
+ 		**/
  		/*
  		for (var i = 0; i<histogram.length; i++) {
  			picsArray = histogram[i];
@@ -163,6 +164,8 @@ var constants = {
 				// console.log("Dominant color of photo " + picsArray[j][constants.main_url] + ": " + dominantColor)
 			}
 		}*/
+		
+		callbackOnFinish();
  	}
 
 
