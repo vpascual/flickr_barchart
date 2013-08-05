@@ -140,11 +140,29 @@ var constants = {
 	    var yearStart = new Date(d.getFullYear(),0,1);
 	    // Calculate full weeks to nearest Thursday
 	    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7)
-	    // Return array of year and week number
-	    return weekNo;
+	    
+	    return String(d.getYear()) + String(weekNo);
 	}
  	
  	function getPhotosColors() {
+ 		var colorThief = new ColorThief();
 
+ 		/**
+			The call to ColorThief.getColor generates the error "Unable to get image data from canvas because the canvas has been tainted by cross-origin data."
+			This is a problem of the Same Origin Policy and apparently should be fixed either using jsonp(¿?) or by
+			creating a proxy that retrieves the image
+ 		*//
+ 		/*
+ 		for (var i = 0; i<histogram.length; i++) {
+ 			picsArray = histogram[i];
+ 			for (var j = 0; j<picsArray.length; j++) {
+	 			img = new Image();
+	 			img.src = picsArray[j][constants.main_url];
+		 		console.log("img: " + img);
+				dominantColor = colorThief.getColor(img);
+				// console.log("Dominant color of photo " + picsArray[j][constants.main_url] + ": " + dominantColor)
+			}
+		}*/
  	}
+
 
