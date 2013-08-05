@@ -35,7 +35,7 @@ body {
     Quantize.js seems to be integrated inline in color-thief.js -->
     <script>
 
-    init('2012-12-05', '2013-05-22', draw, 1);
+    init('2012-12-05', '2013-05-22', draw, 2);
 
     function draw() {
       console.log("Pictures loaded");
@@ -68,9 +68,27 @@ body {
           svg.append("rect")
             .attr("x", function (d) {   return cellWidth * col;   })
             .attr("y", function (d) {   return height - cellHeight * row;  })
+            .attr("row", row)
+            .attr("col", col)
             .attr("width", cellWidth)
             .attr("height", cellHeight)
-        }
+            .style("fill", "steelblue")
+              .on("mouseover", function(d) {                
+                    tooltip.html("<img src=\'" + histogram[this.getAttribute("col")][this.getAttribute("row")].url_sq + "\'></img>");
+                    tooltip.style("visibility", "visible");
+                    //this.style.cursor = "hand";
+                })
+              .on("mousemove", function(){
+                // d3.event must be used to retrieve pageY and pageX. While this is not needed in Chrome, it is needed in Firefox
+                tooltip.style("top", (d3.event.pageY-5)+"px").style("left",(d3.event.pageX+5)+"px");
+
+              })
+              .on("mouseout", function(){
+                  tooltip.style("visibility", "hidden");
+                  //this.style.cursor = "auto";
+                });
+            }
+                  
       }          
     }
 	

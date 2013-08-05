@@ -1,6 +1,6 @@
 var constants = {
 		'main_url' : 'url_l',
-		'num_photos_per_page' : 20,
+		'num_photos_per_page' : 500,
 		'default_granularity' : 1
 	}
 	/*
@@ -33,7 +33,7 @@ var constants = {
 
 	    console.log("Length: " + photos.length)
 
-	    if (data.photos.page < 2/*data.photos.pages*/)
+	    if (data.photos.page < data.photos.pages)
 	    	searchPhotos(data.photos.page + 1, onPageLoaded);
 	    else {
 	    	//getPhotosMetadata()
