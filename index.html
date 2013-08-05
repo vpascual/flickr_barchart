@@ -35,10 +35,43 @@ body {
     Quantize.js seems to be integrated inline in color-thief.js -->
     <script>
 
-    init('2012-12-05', '2013-05-22', onPicturesLoaded, 1);
+    init('2012-12-05', '2013-05-22', draw, 1);
 
-    function onPicturesLoaded() {
-      console.log("Pictures loaded")
+    function draw() {
+      console.log("Pictures loaded");
+
+      var margin = {top: 20, right: 10, bottom: 20, left: 20};
+      var width = 700 - margin.left - margin.right;
+      var height = 500 - margin.top - margin.bottom;
+
+      var tooltip = d3.select("body")
+        .append("div")
+          .attr('class','tooltip')
+          .style("position", "absolute")
+          .style("visibility", "hidden")
+          .style("background-color", "#ffffff");
+
+      var svg = d3.select("body").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var numOfColumns = histogram.length;
+      var cellWidth = width / numOfColumns;
+      var maxBarSize = d3.max(histogram, function(d) { return d.length; }); // the nums of pictures in the highest bar of the histogram
+      var cellHeight = height / maxBarSize;
+
+      for (var col = 0; col<histogram.length; col++) {
+        array = histogram[col];
+        for (var row = 0; row<array.length; row++) {
+          svg.append("rect")
+            .attr("x", function (d) {   return cellWidth * col;   })
+            .attr("y", function (d) {   return height - cellHeight * row;  })
+            .attr("width", cellWidth)
+            .attr("height", cellHeight)
+        }
+      }          
     }
 	
     </script>
