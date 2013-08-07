@@ -3,9 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Demo</title>
-</head>
-<body>
-<style>
+    <style>
 
 body {
   font: 10px sans-serif;
@@ -25,17 +23,61 @@ body {
   z-index: 10px;
 }
 
+.vis {
+  position:absolute;
+  top: 100px;
+  left: 200px;
+}
+
 </style>
-	<script src="js/libs/d3.v3.min.js"></script>
+
+</head>
+<body>
+  
+  <p>
+    <form id="target" action="">
+      Init date: <input type="text" id="datepicker" />
+      Final date: <input type="text" id="datepicker2" />      
+      <select id="combo">
+        <option value=0> Hours </option>
+        <option value=1 selected="selected"> Days </option>
+        <option value=3> Weeks </option>
+        <option value=4> Months </option>
+      </select>
+      <input type="button" value="Go!" id="submitButton"></input>
+    </form>
+  </p>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
     <script src="js/flickr_photos.js" type="text/javascript"></script>
     <script src="js/libs/color-thief.js" type="text/javascript"></script>
     <script src="js/libs/mustache.js" type="text/javascript"></script>
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
     <!-- <script src="js/libs/quantize.js" type="text/javascript"></script> 
     Quantize.js seems to be integrated inline in color-thief.js -->
     <script>
+     $(function() {
+      $( "#datepicker" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
+    })
+     $(function() {
+      $( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
+    });
 
-    init('2012-12-05', '2013-05-22', draw, 2);
+    $(function() {  
+      $("#submitButton").click(function() {
+        initDate = $('#datepicker').val();
+        finishDate = $('#datepicker2').val();
+        granularity = parseInt($('#combo').val())
+        if (initDate != "" && finishDate != "")
+          init(initDate, finishDate, draw, granularity);
+        else
+          console.log("Not enough data")
+      });  
+    }); 
+
+    //init('2012-12-05', '2013-05-22', draw, 2);
 
     function draw() {
       console.log("Pictures loaded");
@@ -93,5 +135,6 @@ body {
     }
 	
     </script>
+
 </body>
 </html>
