@@ -93,6 +93,9 @@ body {
           .style("visibility", "hidden")
           .style("background-color", "#ffffff");
 
+      // remove the SVG in case we have already created it before
+      d3.select("svg").remove();
+
       var svg = d3.select("body").append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
@@ -115,8 +118,9 @@ body {
             .attr("width", cellWidth)
             .attr("height", cellHeight)
             .style("fill", "steelblue")
-              .on("mouseover", function(d) {                
-                    tooltip.html("<img src=\'" + histogram[this.getAttribute("col")][this.getAttribute("row")].url_sq + "\'></img>");
+              .on("mouseover", function(d) {
+                  photo = histogram[this.getAttribute("col")][this.getAttribute("row")];
+                    tooltip.html(photo.date + "<br/><img src=\'" + photo.url_sq + "\'></img>");
                     tooltip.style("visibility", "visible");
                     //this.style.cursor = "hand";
                 })
