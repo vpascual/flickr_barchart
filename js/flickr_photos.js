@@ -75,8 +75,7 @@ var constants = {
     	return date;
  	}
 
- 	function getDataStructure() {
- 		var lastDate = -1; 		
+ 	function getDataStructure() { 		
  		var currentArray = [];
  		var lastBinIdentifier = getGranularityValue(photos[0].date);
 
