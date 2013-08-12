@@ -11,13 +11,9 @@
   <script src="http://code.jquery.com/qunit/qunit-1.12.0.js"></script>
   <script src="js/libs/color-thief.js" type="text/javascript"></script>
   <script src="js/flickr_photos.js" type="text/javascript"></script>
-  <script>
-    test( "a basic test example", function() {
-      var value = "hello";
-      equal( value, "hello", "We expect value to be hello" );
-    });
-
+  <script>    
     test( "generation of the data structure: granularity = days", function() {
+      histogram = [];
       granularity = 1;
       // year, month, day, hours, minutes, seconds, milliseconds)
       obj1 = {
@@ -27,7 +23,7 @@
         date: new Date(2013, 01, 02) 
       }
       obj3 = {
-        date: new Date(2013, 01, 02) 
+        date: new Date(2013, 01, 03) 
       }
       photos = [obj1, obj2, obj3];
 
@@ -41,6 +37,7 @@
 
 
     test( "generation of the data structure: granularity = weeks", function() {
+      histogram = [];
       granularity = 2;
       // year, month, day, hours, minutes, seconds, milliseconds)
 
@@ -61,6 +58,142 @@
       equal( histogram.length, 1, "Right num of elements in the array" );
       equal( histogram[0].length, 3, "Right num of elements in array at pos 0" );
     });
+
+    test( "generation of the data structure WITH GAPS: granularity = days", function() {
+      histogram = [];
+      granularity = 1;
+      // year, month, day, hours, minutes, seconds, milliseconds)
+
+      // the first 3 days of 2013 are on the same week. In fact day 1 of Jan is a Tuesday
+      obj1 = {
+        date: new Date(2013, 01, 01)
+      }
+      obj2 = {
+        date: new Date(2013, 01, 03) 
+      }
+      obj3 = {
+        date: new Date(2013, 01, 04) 
+      }
+      obj4 = {
+        date: new Date(2013, 01, 06) 
+      }
+      photos = [obj1, obj2, obj3, obj4];
+
+      getDataStructure();
+
+      equal( histogram.length, 6, "Right num of elements in the array" );
+      equal( histogram[1].length, 0, "Right num of elements in array at pos 0" );
+      equal( histogram[4].length, 0, "Right num of elements in array at pos 0" );
+    });
+
+    test( "generation of the data structure WITH GAPS: granularity = months", function() {
+      histogram = [];
+      granularity = 3;
+      // year, month, day, hours, minutes, seconds, milliseconds)
+
+      // the first 3 days of 2013 are on the same week. In fact day 1 of Jan is a Tuesday
+      obj1 = {
+        date: new Date(2013, 01, 01)
+      }
+      obj2 = {
+        date: new Date(2013, 02, 03) 
+      }
+      obj3 = {
+        date: new Date(2013, 04, 04) 
+      }
+      obj4 = {
+        date: new Date(2013, 06, 06) 
+      }
+      photos = [obj1, obj2, obj3, obj4];
+
+      getDataStructure();
+
+      equal( histogram.length, 6, "Right num of elements in the array" );
+      equal( histogram[1].length, 0, "Right num of elements in array at pos 0" );
+      equal( histogram[4].length, 0, "Right num of elements in array at pos 0" );
+    });
+
+    test( "Basic ColorThief test", function() {
+      colorThief = new ColorThief();
+      img = new Image();
+      img.src = 'image.jpg';
+
+      result = colorThief.getColor(img);
+      console.log("Result: " + result);
+
+      deepEqual( result, [22, 25, 19], "Correct color extraction")
+    });
+
+    test( "Basic ColorThief test", function() {
+      colorThief = new ColorThief();
+      img = new Image();
+      img.src = 'image.jpg';
+
+      result = colorThief.getColor(img);
+      console.log("Result: " + result);
+
+      deepEqual( result, [22, 25, 19], "Correct color extraction")
+    });
+
+    test( "ColorThief test with image from Flickr", function() {
+      colorThief = new ColorThief();
+      img = new Image();
+      img.src = 'http://farm8.staticflickr.com/7281/8713709657_4782524ac3_z.jpg';
+
+      result = colorThief.getColor(img);
+      console.log("Result: " + result);
+
+      deepEqual( result, [22, 25, 19], "Correct color extraction")
+    });
+
+    test( "Date normalization", function() {
+      // year, month, day, hours, minutes, seconds, milliseconds)
+      granularity = 0;
+      date1 = new Date(2013, 01, 01, 12, 00, 00, 00);
+      date2 = new Date(2013, 01, 02, 12, 00, 00, 00);
+      hoursDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(hoursDistance, 24, "Distance between dates should be of 24 hours");
+
+      granularity = 1;
+      daysDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(daysDistance, 1, "Distance between dates should be of 1 day");
+
+      granularity = 0;
+      date1 = new Date(2013, 01, 01, 12, 00, 00, 00);
+      date2 = new Date(2013, 01, 02, 12, 59, 00, 00);
+      hoursDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(hoursDistance, 24, "Distance between dates should be of 24 hours");
+
+      granularity = 1;
+      daysDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(daysDistance, 1, "Distance between dates should be of 1 day");
+
+      granularity = 2;
+      weeksDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(weeksDistance, 0, "Distance between dates should be of 0 weeks");      
+
+      granularity = 3;
+      monthsDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(monthsDistance, 0, "Distance between dates should be of 0 months");
+
+      /*granularity = 2;
+      date1 = new Date(2013, 01, 01, 12, 00, 00, 00);
+      date2 = new Date(2013, 02, 05, 12, 59, 00, 00);
+      weeksDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(weeksDistance, 3, "Distance between dates should be of 2 weeks"); */
+
+      granularity = 2;
+      date1 = new Date(2013, 01, 01, 12, 00, 00, 00);
+      date2 = new Date(2013, 01, 03, 12, 59, 00, 00);
+      weeksDistance = getTimeValue(date2) - getTimeValue(date1);
+      equal(weeksDistance, 0, "Distance between dates should be of 5 weeks"); 
+
+      granularity = 3;
+      date1 = new Date(2012, 01, 01, 12, 00, 00, 00);
+      date2 = new Date(2013, 01, 15, 12, 59, 00, 00);
+      monthsDistance = getTimeValue(date2) - getTimeValue(date1);      
+      equal(monthsDistance, 12, "Distance between dates should be of 12 months"); 
+    })
 
     function callbackOnFinish() {
         console.log("This is the boyd of callBackOnFinish")
