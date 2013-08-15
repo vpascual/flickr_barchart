@@ -34,6 +34,14 @@ body {
   left: 200px;
 }
 
+.grid .tick {
+    stroke: lightgrey;
+    opacity: 0.7;
+}
+.grid path {
+      stroke-width: 0;
+}
+
 rect {
   stroke : white;
   stroke-width : 1;
@@ -154,7 +162,7 @@ rect {
       var dayFormatter = d3.time.format("%x"),
           hourFormatter = d3.time.format("%X");
 
-      var margin = {top: 20, right: 10, bottom: 20, left: 50},
+      var margin = {top: 20, right: 50, bottom: 20, left: 50},
           width = 700 - margin.left - margin.right,
           height = 500 - margin.top - margin.bottom;
 
@@ -174,7 +182,66 @@ rect {
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
         .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");            
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");     
+
+      minDate = floorDate(globalVars.histogram[0][0].date);
+      lastArray = globalVars.histogram[globalVars.histogram.length - 1];
+      maxDate = floorDate(lastArray[lastArray.length - 1].date);
+      console.log("FirstDate = " + minDate);
+      console.log("lastDate = " + maxDate);       
+
+      var xScale = d3.time.scale()
+                     .domain([minDate, maxDate])
+                     .range([0, width]);
+
+      function buildXAxis() {        
+          return d3.svg.axis()
+                    .scale(xScale)
+                    .ticks(globalVars.histogram.length-1)
+                    //.ticks(d3.time.day, 1)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("bottom");
+      } 
+
+      
+      var yScale = d3.scale.linear()
+                     .domain([0, maxBarSize])
+                     .range([height, 0]);
+
+      function buildYAxis() {        
+          return d3.svg.axis()
+                    .scale(yScale)
+                    //.ticks(d3.time.day)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("left");
+      }
+    
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(buildXAxis());
+    
+      svg.append("g")
+        .attr("class", "axis")
+        //.attr("transform", "translate(" + width + ", 0)")
+        .call(buildYAxis());
+    
+
+      /*svg.append("g")         
+          .attr("class", "grid")
+          .attr("transform", "translate(0," + height + ")")
+          .call(buildXAxis()
+              .tickSize(-height, 0, 0)
+              .tickFormat("")
+          );*/
+
+      svg.append("g")         
+          .attr("class", "grid")
+          .call(buildYAxis()
+              .tickSize(-width, 0, 0)
+              .tickFormat("")
+          );
+
 
       for (var col = 0; col<globalVars.histogram.length; col++) {
         array = globalVars.histogram[col];
@@ -210,49 +277,23 @@ rect {
             }
       }
 
-      minDate = globalVars.histogram[0][0].date;
-      lastArray = globalVars.histogram[globalVars.histogram.length - 1];
-      maxDate = lastArray[lastArray.length - 1].date;
-      console.log("FirstDate = " + typeof(minDate));
-      console.log("lastDate = " + typeof(maxDate));
-      console.log("THis is a date: " + typeof(new Date(2013, 11, 11)));
-      var xScale = d3.scale.linear()
-                     .domain([0, 2])
-                     .range([0, width]);
-
-      var xAxis = d3.svg.axis()
-                    .scale(xScale)
-                    .ticks(3)
-                    //.tickFormat(function(d) { return d + " Jun"; })
-                    .orient("bottom");
-
-
-      var yScale = d3.scale.linear()
-                     .domain([0, maxBarSize])
-                     .range([0, height]);
-
-      var yAxis = d3.svg.axis()
-                    .scale(xScale)
-                    //.ticks(10)
-                    //.tickFormat(function(d) { return d + " Jun"; })
-                    .orient("left");
-    
-      svg.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis);
-    
-      svg.append("g")
-        .attr("class", "axis")
-        //.attr("transform", "translate(" + width + ", 0)")
-        .call(yAxis);
-  /*  svg.append("svg:rect")
-            .attr("width", width)
-            .attr("height", height)
-            //.attr("fill", "#fff")
-            .style("stroke", "#000");*/
+      function floorDate(date) {
+        console.log("floorDate granularity: " + globalVars.granularity)
+        switch(globalVars.granularity)
+        {
+          case 0: // hours          
+            return d3.time.hour.floor(date);
+          case 1: // days
+            return d3.time.day.floor(date);
+          case 2: // weeks
+            return d3.time.week.floor(date);
+          case 3: // months
+            return d3.time.month.floor(date);
+          default:
+            return d3.time.day.floor(date);
+        }
+      }      
     }
-
 
 	
     </script>
