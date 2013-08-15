@@ -41,6 +41,7 @@ rect {
   
   <p>
     <form id="target" action="">
+      Flickr user name: <input type="text" id="usernameTf" value="vpascual"/>
       Init date: <input type="text" id="datepicker" />
       Final date: <input type="text" id="datepicker2" />      
       <select id="combo">
@@ -53,7 +54,24 @@ rect {
     </form>
   </p>
   <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-
+    <script type="text/javascript">
+    // definition of global vars
+    (function() {  
+      window.globalVars = {};
+      globalVars.userId = "",
+      globalVars.username = "",
+      globalVars.initDate = "",
+      globalVars.endDate = "",
+      globalVars.granularity = 1,
+      globalVars.histogram = [],
+      globalVars.photos = [];
+    }());
+    /*var username;
+    var userId; // = '12001399@N05';
+    var initDate = null;
+    var endDate = null;
+    var granularity = 1;*/
+    </script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
     <script src="js/flickr_photos.js" type="text/javascript"></script>
@@ -62,11 +80,7 @@ rect {
     <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
     <!-- <script src="js/libs/quantize.js" type="text/javascript"></script> 
     Quantize.js seems to be integrated inline in color-thief.js -->
-    <script>
-    var userId = '12001399@N05';
-    var initDate = null;
-    var finishDate = null;
-    var granularity = 1;
+    <script>    
 
      $(function() {
       $( "#datepicker" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
@@ -77,37 +91,60 @@ rect {
 
     $(function() {  
       $("#submitButton").click(function() {
-        // if nothing have changed and the submit button has been pressed, we do nothing
+        // if nothing has changed but the submit button has been pressed, we do nothing
         if (($('#datepicker').val() == "" ||
             $('#datepicker2').val() == "") ||
-            (initDate == $('#datepicker').val() &&
-            finishDate == $('#datepicker2').val() &&
-            granularity == parseInt($('#combo').val()))) {
+            (globalVars.initDate == $('#datepicker').val() &&
+            globalVars.endDate == $('#datepicker2').val() &&
+            globalVars.granularity == parseInt($('#combo').val()) &&
+            globalVars.username == $('#usernameTf').val())) {
+
           console.log("Doing nothing as there haven't been a new selection")
             return;
         }
 
-        // remove the SVG in case we have already created it before    
-        d3.select("svg").remove();
-
-        // if the granularity has change, we just recalculate the histogram withoug calling Flickr API
-        if (initDate == $('#datepicker').val() &&
-            finishDate == $('#datepicker2').val() &&
-            granularity != parseInt($('#combo').val())) {
-          console.log("Granularity has changed");
-          granularity = parseInt($('#combo').val())
-          setGranularity(granularity)
-          getDataStructure();
+        if ($('#usernameTf').val() != globalVars.username) {
+          console.log("username value is differnt");
+          globalVars.username = $('#usernameTf').val();
+          getIdFromUserName(globalVars.username, getId);
         } else {
-            console.log("New dates")
-            initDate = $('#datepicker').val();
-            finishDate = $('#datepicker2').val();          
-            granularity = parseInt($('#combo').val())
-            
-            init(userId, initDate, finishDate, draw, granularity);          
+          console.log("username value hasn't changed")
+          searchPics();
         }
       });  
     }); 
+
+    function getId(data) {
+      if (data.stat == "ok") {
+        globalVars.userId = data.user.id;
+        alert("Found id = " + globalVars.userId);
+        searchPics();
+      } else {
+        alert("Incorrect username");
+      }
+    }
+
+    function searchPics() {
+      // remove the SVG in case we have already created it before    
+        d3.select("svg").remove();
+
+        // if the granularity has change, we just recalculate the globalVars.histogram withoug calling Flickr API
+        if (globalVars.initDate == $('#datepicker').val() &&
+            globalVars.endDate == $('#datepicker2').val() &&
+            globalVars.granularity != parseInt($('#combo').val())) {
+          console.log("Granularity has changed");
+          globalVars.granularity = parseInt($('#combo').val())
+          //setGranularity(granularity)
+          getDataStructure();
+        } else {
+            console.log("New dates")
+            globalVars.initDate = $('#datepicker').val();
+            globalVars.endDate = $('#datepicker2').val();          
+            globalVars.granularity = parseInt($('#combo').val())
+            
+            init(globalVars.userId, globalVars.initDate, globalVars.endDate, draw, globalVars.granularity);          
+        }
+    }
 
     function draw() {
       console.log("Pictures loaded");
@@ -129,13 +166,13 @@ rect {
         .append("g")
           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      var numOfColumns = histogram.length;
+      var numOfColumns = globalVars.histogram.length;
       var cellWidth = width / numOfColumns;
-      var maxBarSize = d3.max(histogram, function(d) { return d.length; }); // the nums of pictures in the highest bar of the histogram
+      var maxBarSize = d3.max(globalVars.histogram, function(d) { return d.length; }); // the nums of pictures in the highest bar of the globalVars.histogram
       var cellHeight = height / maxBarSize;
 
-      for (var col = 0; col<histogram.length; col++) {
-        array = histogram[col];
+      for (var col = 0; col<globalVars.histogram.length; col++) {
+        array = globalVars.histogram[col];
         for (var row = 0; row<array.length; row++) {
           svg.append("rect")
             .attr("x", function (d) {   return cellWidth * col;   })
@@ -147,7 +184,7 @@ rect {
             
             .style("fill", "steelblue")
               .on("mouseover", function(d) {
-                  photo = histogram[this.getAttribute("col")][this.getAttribute("row")];
+                  photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
                     tooltip.html(photo.date + "<br/><img src=\'" + photo.url_sq + "\'></img>");
                     tooltip.style("visibility", "visible");
                     //this.style.cursor = "hand";
@@ -162,7 +199,7 @@ rect {
                   //this.style.cursor = "auto";
                 })
               .on("click", function(){
-                photo = histogram[this.getAttribute("col")][this.getAttribute("row")];
+                photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
                   window.open("http://www.flickr.com/photos/" + userId + "/" + photo.id)
                 });
             }
