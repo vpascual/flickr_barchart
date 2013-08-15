@@ -16,6 +16,11 @@ body {
   shape-rendering: crispEdges;
 }
 
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
 .tooltip {
   border:1px solid;
   margin:10px;
@@ -117,7 +122,6 @@ rect {
     function getId(data) {
       if (data.stat == "ok") {
         globalVars.userId = data.user.id;
-        alert("Found id = " + globalVars.userId);
         searchPics();
       } else {
         alert("Incorrect username");
@@ -132,12 +136,11 @@ rect {
         if (globalVars.initDate == $('#datepicker').val() &&
             globalVars.endDate == $('#datepicker2').val() &&
             globalVars.granularity != parseInt($('#combo').val())) {
-          console.log("Granularity has changed");
+          
           globalVars.granularity = parseInt($('#combo').val())
           //setGranularity(granularity)
           getDataStructure();
         } else {
-            console.log("New dates")
             globalVars.initDate = $('#datepicker').val();
             globalVars.endDate = $('#datepicker2').val();          
             globalVars.granularity = parseInt($('#combo').val())
@@ -148,10 +151,12 @@ rect {
 
     function draw() {
       console.log("Pictures loaded");
+      var dayFormatter = d3.time.format("%x"),
+          hourFormatter = d3.time.format("%X");
 
-      var margin = {top: 20, right: 10, bottom: 20, left: 20};
-      var width = 700 - margin.left - margin.right;
-      var height = 500 - margin.top - margin.bottom;
+      var margin = {top: 20, right: 10, bottom: 20, left: 50},
+          width = 700 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
 
       var tooltip = d3.select("body")
         .append("div")
@@ -160,23 +165,23 @@ rect {
           .style("visibility", "hidden")
           .style("background-color", "#ffffff");      
 
+      var numOfColumns = globalVars.histogram.length,
+          cellWidth = width / numOfColumns,
+          maxBarSize = d3.max(globalVars.histogram, function(d) { return d.length; }), // the nums of pictures in the highest bar of the globalVars.histogram
+          cellHeight = height / maxBarSize;          
+
       var svg = d3.select("body").append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
         .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      var numOfColumns = globalVars.histogram.length;
-      var cellWidth = width / numOfColumns;
-      var maxBarSize = d3.max(globalVars.histogram, function(d) { return d.length; }); // the nums of pictures in the highest bar of the globalVars.histogram
-      var cellHeight = height / maxBarSize;
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");            
 
       for (var col = 0; col<globalVars.histogram.length; col++) {
         array = globalVars.histogram[col];
         for (var row = 0; row<array.length; row++) {
           svg.append("rect")
             .attr("x", function (d) {   return cellWidth * col;   })
-            .attr("y", function (d) {   return height - cellHeight * row;  })
+            .attr("y", function (d) {   return height - (cellHeight * (row + 1)); })
             .attr("row", row)
             .attr("col", col)
             .attr("width", cellWidth)
@@ -185,7 +190,7 @@ rect {
             .style("fill", "steelblue")
               .on("mouseover", function(d) {
                   photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
-                    tooltip.html(photo.date + "<br/><img src=\'" + photo.url_sq + "\'></img>");
+                    tooltip.html(dayFormatter(photo.date) + "<br/>" + hourFormatter(photo.date) + "<br/><img src=\'" + photo.url_sq + "\'></img>");
                     tooltip.style("visibility", "visible");
                     //this.style.cursor = "hand";
                 })
@@ -200,12 +205,55 @@ rect {
                 })
               .on("click", function(){
                 photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
-                  window.open("http://www.flickr.com/photos/" + userId + "/" + photo.id)
+                  window.open("http://www.flickr.com/photos/" + globalVars.userId + "/" + photo.id)
                 });
             }
-                  
-      }          
+      }
+
+      minDate = globalVars.histogram[0][0].date;
+      lastArray = globalVars.histogram[globalVars.histogram.length - 1];
+      maxDate = lastArray[lastArray.length - 1].date;
+      console.log("FirstDate = " + typeof(minDate));
+      console.log("lastDate = " + typeof(maxDate));
+      console.log("THis is a date: " + typeof(new Date(2013, 11, 11)));
+      var xScale = d3.scale.linear()
+                     .domain([0, 2])
+                     .range([0, width]);
+
+      var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .ticks(3)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("bottom");
+
+
+      var yScale = d3.scale.linear()
+                     .domain([0, maxBarSize])
+                     .range([0, height]);
+
+      var yAxis = d3.svg.axis()
+                    .scale(xScale)
+                    //.ticks(10)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("left");
+    
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+    
+      svg.append("g")
+        .attr("class", "axis")
+        //.attr("transform", "translate(" + width + ", 0)")
+        .call(yAxis);
+  /*  svg.append("svg:rect")
+            .attr("width", width)
+            .attr("height", height)
+            //.attr("fill", "#fff")
+            .style("stroke", "#000");*/
     }
+
+
 	
     </script>
 

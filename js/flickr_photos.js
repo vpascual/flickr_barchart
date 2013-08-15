@@ -101,92 +101,43 @@ var constants = {
 
  	function getDataStructure() { 	
  		globalVars.histogram = [];	
- 		var currentArray = [];
- 		var lastDate = getTimeValue(globalVars.photos[0].date);
+ 		var currentArray = [globalVars.photos[0]];
+ 		var currentDate = globalVars.photos[0].date;
 
- 		for (var i = 0; i<globalVars.photos.length; i++) {
- 			currentDateValue = getTimeValue(globalVars.photos[i].date)
- 			
- 			if (currentDateValue == lastDate) {
- 				console.log("Adding photo " + globalVars.photos[i].id + " with date " + globalVars.photos[i].date + " to bin " + currentDateValue)
+ 		for (var i = 1; i<globalVars.photos.length; i++) {
+ 			interval = getTimeInterval(currentDate, globalVars.photos[i].date);
+ 			if (interval.length == 0) {
  				currentArray.push(globalVars.photos[i]);
- 				console.log("Current array has now " + currentArray.length + " values")
  			} else {
- 				// first array always go to first position without filling gaps
- 				console.log("Found a new identifier " + currentDateValue + " different from " + lastDate);
  				globalVars.histogram.push(currentArray);
- 				fillGaps(lastDate, currentDateValue);
- 				console.log("Histgram has now " + globalVars.histogram.length + " values");
- 				lastDate = currentDateValue;
- 				console.log("Adding photo " + globalVars.photos[i].id + " with date " + globalVars.photos[i].date + " to bin " + currentDateValue)
- 				currentArray = [];
- 				currentArray.push(globalVars.photos[i]);
- 			}	
+ 				// fill with empty arrays when the interval between two dates is biggers than 1
+ 				for (var j = 1; j<interval.length; j++) {
+ 					globalVars.histogram.push([]);
+ 				}
+ 				currentArray = [globalVars.photos[i]];
+ 				currentDate = globalVars.photos[i].date;
+ 			}
 		}
 		globalVars.histogram.push(currentArray);
-		//draw();
 		getPhotosColors();
  	}
 
- 	/**
- 	* This functions fills the "globalVars.histogram" with empty arrays if there are some hours/days/weeks/months with no pictures
- 	**/
- 	function fillGaps(lastDate, currentDateValue) {
- 		console.log("Filling gaps between " + lastDate + " and " + currentDateValue);
- 		diff = currentDateValue - lastDate;
 
- 		for (var i = 1; i<diff; i++) {
- 			console.log("Added one gap");
- 			globalVars.histogram.push([]);
- 		}
- 	}
-
- 	/**
- 	*	This could also be solved with the granularity param: http://www.flickr.com/services/api/misc.dates.html
- 	* 	Nevertheless this param doesn't allow the "week" granularity so decided to do it by myself creating the  	"date!" parameter in the "photo" object
- 	**/
- 	function getTimeValue(date) {
- 		tmpDate = new Date();
- 		tmpDate.setTime(date.getTime());
- 		// set minutes, seconds and milliseconds to 0
- 		tmpDate.setMinutes(0);
-		tmpDate.setSeconds(0);
-		tmpDate.setMilliseconds(0);
-
+ 	function getTimeInterval(date1, date2) {
  		switch(globalVars.granularity)
 		{
 			case 0: // hours					
-				return tmpDate.getTime() / 3600000;
+				return d3.time.hour.utc.range(date1, date2);
 			case 1: // days
-				tmpDate.setHours(0);
-				tmpDate.setDate(tmpDate.getDate() - 4);
-				return tmpDate.getTime() / 86400000;
+				return d3.time.day.utc.range(date1, date2);
 			case 2: // weeks
-				return Math.floor(tmpDate.getTime() / 604800000);
+				return d3.time.week.utc.range(date1, date2);
 			case 3: // months
-				return tmpDate.getFullYear() * 12 + tmpDate.getMonth();
+				return d3.time.month.utc.range(date1, date2);
 			default:
-				return tmpDate.getTime() / 86400000; // days
+				return d3.time.day.utc.range(date1, date2);
 		}
  	}
-
- 	/*
- 	*	Code taken from http://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
- 	*/
-	function getWeekNumber(d) {
-	    // Copy date so don't modify original
-	    d = new Date(d);
-	    d.setHours(0,0,0);
-	    // Set to nearest Thursday: current date + 4 - current day number
-	    // Make Sunday's day number 7
-	    d.setDate(d.getDate() + 4 - (d.getDay()||7));
-	    // Get first day of year
-	    var yearStart = new Date(d.getFullYear(),0,1);
-	    // Calculate full weeks to nearest Thursday
-	    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7)
-	    
-	    return String(d.getYear()) + String(weekNo);
-	}
  	
  	function getPhotosColors() {
  		var colorThief = new ColorThief();
