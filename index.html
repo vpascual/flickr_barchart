@@ -127,6 +127,8 @@ rect {
       });  
     }); 
 
+    var dateFormat = d3.time.format("%d-%m-%y"); 
+
     function getId(data) {
       if (data.stat == "ok") {
         globalVars.userId = data.user.id;
@@ -157,7 +159,7 @@ rect {
         }
     }
 
-    function buildXAxis(width) {
+    function buildXAxis(width, numTicks) {
         var xScale = d3.time.scale()
                      .domain([floorDate(new Date(globalVars.initDate)), floorDate(new Date(globalVars.endDate))])
                      .range([0, width]);
@@ -166,7 +168,13 @@ rect {
                     .scale(xScale)
                     .ticks(globalVars.histogram.length)
                     //.ticks(d3.time.day, 1)
-                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .tickFormat(function(d, i) { 
+                      step = Math.floor(globalVars.histogram.length / numTicks);
+                      if (i%step == 0) {                        
+                        return dateFormat(new Date(d));
+                      } else
+                        return '';
+                    })
                     .orient("bottom");
       } 
 
@@ -213,11 +221,13 @@ rect {
       // maxDate = floorDate(lastArray[lastArray.length - 1].date);
       // console.log("FirstDate = " + minDate);
       // console.log("lastDate = " + maxDate);                              
-    
+      
+      numTicks = (cellWidth < 60) ? Math.floor(width / 60) : globalVars.photos.length;
+      console.log("numTicks: " + numTicks);
       svg.append("g")
         .attr("class", "axis")
         .attr("transform", "translate(-1," + (height + 1) + ")")
-        .call(buildXAxis(width));
+        .call(buildXAxis(width, numTicks));
     
       svg.append("g")
         .attr("class", "axis")
@@ -268,7 +278,7 @@ rect {
               .style("fill", "steelblue")
               .on("mouseover", function(d) {
 
-                  tooltip.html(dayFormatter(d.date) + "<br/>" + hourFormatter(d.date) + "<br/><img src=\'" + d.url_sq + "\'></img>");
+                  tooltip.html(dateFormat(d.date) + "<br/>" + hourFormatter(d.date) + "<br/><img src=\'" + d.url_sq + "\'></img>");
                    tooltip.style("visibility", "visible");
                     //this.style.cursor = "hand";
                 })
