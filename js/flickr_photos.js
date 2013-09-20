@@ -100,7 +100,15 @@ var constants = {
  	}
 
  	function getDataStructure() { 	
- 		globalVars.histogram = [];	
+ 		globalVars.histogram = [];
+
+ 		// check if there is a time interval with no pictures
+ 		interval = getTimeInterval(new Date(globalVars.initDate), globalVars.photos[0].date);
+ 		console.log("interval between " + new Date(globalVars.initDate) + " and " + globalVars.photos[0].date + " is = " + interval.length);
+ 		console.log("INterval: " + interval);
+ 		if (interval.length > 0) 
+ 			addBlankElementsToArray(globalVars.histogram, interval.length);
+
  		var currentArray = [globalVars.photos[0]];
  		var currentDate = globalVars.photos[0].date;
 
@@ -110,16 +118,30 @@ var constants = {
  				currentArray.push(globalVars.photos[i]);
  			} else {
  				globalVars.histogram.push(currentArray);
- 				// fill with empty arrays when the interval between two dates is biggers than 1
- 				for (var j = 1; j<interval.length; j++) {
+ 				// fill with empty arrays when the interval between two dates is bigger than 1
+ 				addBlankElementsToArray(globalVars.histogram, interval.length - 1);
+ 				/*for (var j = 1; j<interval.length; j++) {
  					globalVars.histogram.push([]);
- 				}
+ 				}*/
  				currentArray = [globalVars.photos[i]];
  				currentDate = globalVars.photos[i].date;
  			}
 		}
 		globalVars.histogram.push(currentArray);
+
+		interval = getTimeInterval(globalVars.photos[globalVars.photos.length - 1].date, new Date(globalVars.endDate));
+		console.log("interval between " + globalVars.photos[globalVars.photos.length - 1].date + " and " + new Date(globalVars.endDate) + " is = " + interval.length);
+		console.log("INterval: " + interval);
+		if (interval.length > 0)
+			addBlankElementsToArray(globalVars.histogram, interval.length - 1);
+
 		getPhotosColors();
+ 	}
+
+ 	function addBlankElementsToArray(array, numOfBlankElements) {
+ 		console.log("Adding extra " + numOfBlankElements + " to histogram")
+ 		for (var i = 0; i<numOfBlankElements; i++) 
+			globalVars.histogram.push([]);
  	}
 
 
@@ -127,15 +149,15 @@ var constants = {
  		switch(globalVars.granularity)
 		{
 			case 0: // hours					
-				return d3.time.hour.utc.range(date1, date2);
+				return d3.time.hour.range(date1, date2);
 			case 1: // days
-				return d3.time.day.utc.range(date1, date2);
+				return d3.time.day.range(date1, date2);
 			case 2: // weeks
-				return d3.time.week.utc.range(date1, date2);
+				return d3.time.week.range(date1, date2);
 			case 3: // months
-				return d3.time.month.utc.range(date1, date2);
+				return d3.time.month.range(date1, date2);
 			default:
-				return d3.time.day.utc.range(date1, date2);
+				return d3.time.day.range(date1, date2);
 		}
  	}
  	

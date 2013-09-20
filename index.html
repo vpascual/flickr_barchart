@@ -55,8 +55,8 @@ rect {
   <p>
     <form id="target" action="">
       Flickr user name: <input type="text" id="usernameTf" value="vpascual"/>
-      Init date: <input type="text" id="datepicker" />
-      Final date: <input type="text" id="datepicker2" />      
+      Init date: <input type="text" id="datepicker" value="2013-05-01"/>
+      Final date: <input type="text" id="datepicker2" value="2013-05-22"/>      
       <select id="combo">
         <option value=0> Hours </option>
         <option value=1 selected="selected"> Days </option>
@@ -157,6 +157,30 @@ rect {
         }
     }
 
+    function buildXAxis(width) {
+        var xScale = d3.time.scale()
+                     .domain([floorDate(new Date(globalVars.initDate)), floorDate(new Date(globalVars.endDate))])
+                     .range([0, width]);
+
+          return d3.svg.axis()
+                    .scale(xScale)
+                    .ticks(globalVars.histogram.length)
+                    //.ticks(d3.time.day, 1)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("bottom");
+      } 
+
+      function buildYAxis(height, maxBarSize) {
+        var yScale = d3.scale.linear()
+                     .domain([0, maxBarSize])
+                     .range([height, 0]);     
+          return d3.svg.axis()
+                    .scale(yScale)
+                    //.ticks(d3.time.day)
+                    //.tickFormat(function(d) { return d + " Jun"; })
+                    .orient("left");
+      }  
+
     function draw() {
       console.log("Pictures loaded");
       var dayFormatter = d3.time.format("%x"),
@@ -175,7 +199,7 @@ rect {
 
       var numOfColumns = globalVars.histogram.length,
           cellWidth = width / numOfColumns,
-          maxBarSize = d3.max(globalVars.histogram, function(d) { return d.length; }), // the nums of pictures in the highest bar of the globalVars.histogram
+          maxBarSize = d3.max(globalVars.histogram, function(d) { return d.length; }), // the num of pictures in the highest bar of the globalVars.histogram
           cellHeight = height / maxBarSize;          
 
       var svg = d3.select("body").append("svg")
@@ -184,47 +208,21 @@ rect {
         .append("g")
           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");     
 
-      minDate = floorDate(globalVars.histogram[0][0].date);
-      lastArray = globalVars.histogram[globalVars.histogram.length - 1];
-      maxDate = floorDate(lastArray[lastArray.length - 1].date);
-      console.log("FirstDate = " + minDate);
-      console.log("lastDate = " + maxDate);       
-
-      var xScale = d3.time.scale()
-                     .domain([minDate, maxDate])
-                     .range([0, width]);
-
-      function buildXAxis() {        
-          return d3.svg.axis()
-                    .scale(xScale)
-                    .ticks(globalVars.histogram.length-1)
-                    //.ticks(d3.time.day, 1)
-                    //.tickFormat(function(d) { return d + " Jun"; })
-                    .orient("bottom");
-      } 
-
-      
-      var yScale = d3.scale.linear()
-                     .domain([0, maxBarSize])
-                     .range([height, 0]);
-
-      function buildYAxis() {        
-          return d3.svg.axis()
-                    .scale(yScale)
-                    //.ticks(d3.time.day)
-                    //.tickFormat(function(d) { return d + " Jun"; })
-                    .orient("left");
-      }
+      // minDate = floorDate(globalVars.histogram[0][0].date);
+      // lastArray = globalVars.histogram[globalVars.histogram.length - 1];
+      // maxDate = floorDate(lastArray[lastArray.length - 1].date);
+      // console.log("FirstDate = " + minDate);
+      // console.log("lastDate = " + maxDate);                              
     
       svg.append("g")
         .attr("class", "axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(buildXAxis());
+        .attr("transform", "translate(-1," + (height + 1) + ")")
+        .call(buildXAxis(width));
     
       svg.append("g")
         .attr("class", "axis")
-        //.attr("transform", "translate(" + width + ", 0)")
-        .call(buildYAxis());
+        .attr("transform", "translate(-2, 0)")
+        .call(buildYAxis(height, maxBarSize));
     
 
       /*svg.append("g")         
@@ -237,28 +235,41 @@ rect {
 
       svg.append("g")         
           .attr("class", "grid")
-          .call(buildYAxis()
+          .call(buildYAxis(height, maxBarSize)
               .tickSize(-width, 0, 0)
               .tickFormat("")
           );
 
 
-      for (var col = 0; col<globalVars.histogram.length; col++) {
-        array = globalVars.histogram[col];
-        for (var row = 0; row<array.length; row++) {
-          svg.append("rect")
-            .attr("x", function (d) {   return cellWidth * col;   })
-            .attr("y", function (d) {   return height - (cellHeight * (row + 1)); })
-            .attr("row", row)
-            .attr("col", col)
-            .attr("width", cellWidth)
-            .attr("height", cellHeight)
-            
-            .style("fill", "steelblue")
+      // Create a group for each row in the data matrix and
+      // translate the group vertically
+      var bars = svg.selectAll(".bar")
+          .data(globalVars.histogram)
+          .enter()
+          .append('g')
+          .attr('transform', function(d, i) {
+              return 'translate(' + cellWidth * i + ')';
+          });
+
+      // For each group, create a set of rectangles and bind 
+      // them to the inner array (the inner array is already
+      // binded to the group)
+      bars.selectAll('rect')
+          .data(function(d) { 
+              console.log(d);
+              return d; 
+          })
+          .enter()
+          .append('rect')
+              //.attr('x', function(d, i) { return 100 * i; })
+              .attr('y', function(d, i) { return height - (cellHeight * (i + 1)); })
+              .attr('width', cellWidth)
+              .attr('height', cellHeight)
+              .style("fill", "steelblue")
               .on("mouseover", function(d) {
-                  photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
-                    tooltip.html(dayFormatter(photo.date) + "<br/>" + hourFormatter(photo.date) + "<br/><img src=\'" + photo.url_sq + "\'></img>");
-                    tooltip.style("visibility", "visible");
+
+                  tooltip.html(dayFormatter(d.date) + "<br/>" + hourFormatter(d.date) + "<br/><img src=\'" + d.url_sq + "\'></img>");
+                   tooltip.style("visibility", "visible");
                     //this.style.cursor = "hand";
                 })
               .on("mousemove", function(){
@@ -272,9 +283,9 @@ rect {
                 })
               .on("click", function(){
                 photo = globalVars.histogram[this.getAttribute("col")][this.getAttribute("row")];
-                  window.open("http://www.flickr.com/photos/" + globalVars.userId + "/" + photo.id)
+                  window.open("http://www.flickr.com/photos/" + globalVars.userId + "/" + d.id)
                 });
-            }
+            
       }
 
       function floorDate(date) {
@@ -293,7 +304,7 @@ rect {
             return d3.time.day.floor(date);
         }
       }      
-    }
+    
 
 	
     </script>
